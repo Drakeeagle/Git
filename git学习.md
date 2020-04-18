@@ -946,4 +946,15 @@ no branch
 ### 使用github代码托管
 - 一个账户可以添加多个pub key, 一个pub key只能添加到一个账户上
 
-- git remote add origin [仓库地址]
+- 操作流程如下:
+    - git init
+    - git commit -m "first commit"
+    - git remote add origin [git仓库地址] //origin是仓库地址的别名
+    - git push -u origin master
+
+- git 协议需要 公钥私钥 访问
+- http 协议可以匿名访问，不需要公钥私钥
+- 要想有提交的权限，就必须要添加另一个用户的公钥
+- 提交权限
+    - git remote -v
+    - git push origin master
