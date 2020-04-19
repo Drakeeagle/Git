@@ -374,6 +374,9 @@ https://blog.csdn.net/archer_wu2/article/details/80605366
 
 对于用户来说 每一个快照都是独立的。
 但是对于git底层来说，并不是独立的。快照叠加快照 造成的空间浪费，在git里是不存在的。了解到这一层就行啦。
+
+- git gc 压缩
+
 **git log -p 提交做了哪些修改**
 
 ### git引用: 分支和标签
@@ -710,6 +713,7 @@ https://www.jianshu.com/p/37f3a7e4a193
 .
 .
 - git rebase --continue 即可
+- git rebase --abort 放弃rebase
 
 ### 恢复隐藏历史
 
@@ -884,8 +888,8 @@ https://blog.csdn.net/ManyPeng/article/details/81095744
 
 https://www.jianshu.com/p/d254c8ff008f
 
-- 工作中rebase的工作流程
-https://blog.csdn.net/ManyPeng/article/details/81095744
+- 工作中rebase的工作流程  
+<https://blog.csdn.net/ManyPeng/article/details/81095744>
 
     ![error](37.png)
     ![error](38.png)
@@ -943,6 +947,10 @@ no branch
 - git config --list //配置
     - 在 用户名目录 .gitconfig文件中
 
+- 产生密钥
+    - ssh-keygen -t rsa -C "your_email@example.com"
+
+- ssh -T git@github.com
 ### 使用github代码托管
 - 一个账户可以添加多个pub key, 一个pub key只能添加到一个账户上
 
@@ -955,6 +963,124 @@ no branch
 - git 协议需要 公钥私钥 访问
 - http 协议可以匿名访问，不需要公钥私钥
 - 要想有提交的权限，就必须要添加另一个用户的公钥
+    - 对于不同的项目，除了仓库的建立者，其他人都需要在这个项目里添加公钥,才会有权限进行push等操作，如果用ssh，是可以colone下来进行围观的
 - 提交权限
     - git remote -v
     - git push origin master
+
+### 远程仓库的基本操作
+- 从远程仓库克隆
+    - git clone [addr]
+- 添加远程仓库
+    - git remote add orgiin [地址] // 默认是 origin
+- 自动与远程的master建立关联
+    - git branch
+    - git branch -a
+    - git branch -av
+
+- git fetch 仅仅拉到本地仓库，并不与本地分支合并
+    - git fetch == git fetch origin master
+- git pull 自动拉取某个分支更新
+    - git pull origin dev
+
+- 查看远程仓库的信息
+    - git remove -v
+    - gti remove show origin //更详细
+
+- 远程仓库的删除
+    - git remote rm origin //只是删除远程仓库的别名
+    - git remote add origin [地址] //添加地址
+- 远程仓库重命名
+    - git remote rename old new
+
+- fetch 与 pull 的区别
+    - fetch
+        - git branch -a 刷到了 master
+        - git reabse remotes/origin/master
+    - pull
+        - 说明也不用做了，已经merge好了
+
+### 远程分支的基本操作
+远程分支是对远程仓库状态的索引用,remote/origin/master
+- git branch -a
+    - 红色的是远程分支
+
+创建远程分支
+- git push origin feature1:feature_new
+
+    ![error](43.png)
+- git push origin feature1
+    - 创建feature1分支，不会重命名
+
+- git中的引用有三种
+    - 本地分支
+    - 远程分支
+    - 标签
+
+- 实际操作：远程分支被其他同事更新后
+    - git fetch
+    - git checkout -b local_branch[取相同名字也可以] orgin/newfeature
+    - 此时已经建立关联了
+    - touch del.c / git add . /git commit -m "del add del.c"
+    - git push origin del //origin 只是远程仓库的一个别名而已
+
+- 删除远程
+    - git push origin [空格]:dev 就是没有，那么就删除了远程分支
+
+### 远程分支与本地分支的区别
+Master VS origin/Master
+- 本地的指向远程仓库的 ref，并不会自动的更新而是需要通过pull 或者 fetch
+- 当本地master 与 远程库的 master有冲突，即其他同事先于你在master提交，则会出现:
+    - Push reject. Non fast-forwad
+
+- 方式1 :git fetch / git pull
+- 方式2 :
+    - 本地的 master低于远程的origin/master,由本地的origin/master进行对比
+    ![error](44.png)
+    - git fetch 拉到本地(实际上是更新本地的 origin/master的commit)，并未与本地的master合并
+    ![error](45.png)
+    - git rebase origin/master
+    ![error](46.png)
+    - git push origin master 推送到远程
+    ![error](47.png)
+    - git fetch 更新本地的 origin/master即可
+    ![error](48.png)
+    - 底层:
+        - cat .git/refs/heads/master
+        - cat .git/refs/remote/origin/master
+        - 两者等价
+
+### 添加新的远程版本库
+- 实际场景使用:
+
+    常见工作流:
+![error](49.png)
+
+- 此时我想 查看同事B的修改，添加B的仓库
+![error](50.png)
+
+- 操作流程
+    - git remote -v:查看远程仓库
+    - git remote add dada git@github.com:dada/test.git
+    - git remote -v
+        - dada git@github：dada/test.git(fetch)
+        - dada git@github：dada/test.git(push)
+        - origin git@github: papa/test.git(fetch)
+        - origin git@github: papa/test.git(push)
+    - git fech dada merge分支
+    - git branch -a :多出了远程分支 remotes/dada/merge
+    - git branch dd-merge dada/merge 建立新的分支
+    - 进阶这分支操作即可
+
+## 远程操作的标签管理
+- 打上标签后, 用 git checkou out v1.0 可以下载标签
+- 推送某个标签
+    - git push origin v1.0 //在远程仓库推送1.0标签
+    - git push origin --tags //全部推送上去
+- 删除远程标签
+    - git tag -d v1.0
+    - git push origin [空格]:refs/tags/v1.0
+
+- 标签
+    - 轻量: refs/tags/v1.0 指向
+    - 重量: .git/objects/ 下生成commit文件,里面包含了blob信息
